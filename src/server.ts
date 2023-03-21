@@ -2,7 +2,7 @@ import http, { IncomingMessage, ServerResponse } from "http";
 import ws, { WebSocket, Server, RawData } from "ws";
 import { MongoClient } from "mongodb";
 import { Message, Client } from "./models";
-
+import * as db from "./database";
 const wss = new Server({ noServer: true });
 let connectedClients: Client[] = [];
 const uri = "mongodb://localhost:27017";
@@ -53,7 +53,7 @@ function onConnect(websocket: WebSocket) {
 
     websocket.on("message", async (messageRaw) => {
       const message = decodeMessage(messageRaw);
-      await messagesCollection.insertOne(message);
+      db.addMessage(message);
       const socket = connectedClients.find(
         (client) => client.connection === websocket
       );
