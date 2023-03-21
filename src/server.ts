@@ -15,6 +15,16 @@ const client = new MongoClient(uri, {
 const database = client.db("einsChat");
 const messagesCollection = database.collection("messages");
 
+export function start() {
+  console.log("Starting server...");
+
+  if (!module.parent) {
+    http.createServer(accept).listen(8080);
+  } else {
+    exports.accept = accept;
+  }
+}
+
 function accept(req: IncomingMessage, res: ServerResponse) {
   // all incoming requests must be websockets
   if (
@@ -70,12 +80,6 @@ function onConnect(websocket: WebSocket) {
     connectedClients.forEach((c) => console.log(c.name));
     console.log("-----");
   });
-}
-
-if (!module.parent) {
-  http.createServer(accept).listen(8080);
-} else {
-  exports.accept = accept;
 }
 
 function decodeMessage(raw: ws.RawData): Message {
