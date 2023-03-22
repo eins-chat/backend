@@ -21,7 +21,7 @@ export class User {
 }
 
 export class Message {
-  public readonly author: string;
+  public author: string;
   public readonly content: string;
   public readonly timestamp: number;
 

@@ -5,6 +5,8 @@ import { hashPw, verifyPw } from "./util/crypto";
 import * as db from "./database";
 import { User } from "./models";
 import errorMiddleware from "./error-middleware";
+import authMiddleware from "./middlewares/auth.middleware";
+import corsMiddleware from "cors";
 
 const PORT = 3000;
 
@@ -23,6 +25,13 @@ export function start() {
 }
 
 function registerPreMiddlewares() {
+  app.use(
+    corsMiddleware({
+      origin: "http://localhost:4200",
+      methods: ["GET", "POST"],
+    })
+  );
+
   app.use(express.json());
 }
 
@@ -31,11 +40,11 @@ function registerEndpoints() {
     const { username, password } = req.body;
     const userExist = await db.userExists(username);
 
-    if (userExist) {
+    if (!userExist) {
       const token = sign(username);
       const passwortHash = await hashPw(password);
       db.addUser(new User(username, passwortHash));
-      res.status(StatusCodes.CREATED).send(token);
+      res.status(StatusCodes.CREATED).json({ token: token });
     } else {
       res
         .status(StatusCodes.CONFLICT)
@@ -43,16 +52,21 @@ function registerEndpoints() {
     }
   });
 
-  app.get("/login", async (req, res) => {
+  app.post("/login", async (req, res) => {
     const { username, password } = req.body;
     const user = await db.getUserByName(username);
     const isPasswordCorrect = await verifyPw(password, user.passwortHash);
     if (isPasswordCorrect) {
       const token = sign(username);
-      res.status(StatusCodes.OK).send(token);
+      res.status(StatusCodes.OK).json({ token: token });
     } else {
       res.status(StatusCodes.UNAUTHORIZED).send("Invalid username or password");
     }
+  });
+
+  app.get("/users", authMiddleware, async (req, res) => {
+    const users = await db.searchUser("e");
+    res.send(users);
   });
 }
 

@@ -26,7 +26,7 @@ export async function userExists(name: string): Promise<boolean> {
 }
 
 export async function addUser(user: User) {
-  if (!userExists(user.username)) {
+  if (!(await userExists(user.username))) {
     usersCollection.insertOne(user);
   } else {
     throw new Error("user already exists");
@@ -35,4 +35,11 @@ export async function addUser(user: User) {
 
 export function addMessage(message: Message) {
   messagesCollection.insertOne(message);
+}
+export async function searchUser(name: string) {
+  const query = ".*" + name + ".*";
+  return await usersCollection
+    .find({ username: { $regex: query, $options: "i" } })
+    .map((obj) => obj.username)
+    .toArray();
 }

@@ -3,6 +3,8 @@ import ws, { WebSocket, Server, RawData } from "ws";
 import { MongoClient } from "mongodb";
 import { Message, Client } from "./models";
 import * as db from "./database";
+import { verify } from "./util/jwt";
+
 const wss = new Server({ noServer: true });
 let connectedClients: Client[] = [];
 const uri = "mongodb://localhost:27017";
@@ -17,12 +19,7 @@ const messagesCollection = database.collection("messages");
 
 export function start() {
   console.log("Starting server...");
-
-  if (!module.parent) {
-    http.createServer(accept).listen(8080);
-  } else {
-    exports.accept = accept;
-  }
+  http.createServer(accept).listen(8080);
 }
 
 function accept(req: IncomingMessage, res: ServerResponse) {
@@ -46,13 +43,28 @@ function accept(req: IncomingMessage, res: ServerResponse) {
 
 function onConnect(websocket: WebSocket) {
   websocket.once("message", (messageRaw) => {
-    const message = decodeMessage(messageRaw);
-    const author = message.author;
-    console.log("New client connected: " + author);
-    connectedClients.push(new Client(websocket, author));
+    const message = JSON.parse(messageRaw.toString());
+
+    const payload = verify(message.token);
+
+    if (typeof payload === "string") {
+      websocket.close();
+      return;
+    }
+
+    console.log("New client connected: " + payload.username);
+    connectedClients.push(new Client(websocket, payload.username));
 
     websocket.on("message", async (messageRaw) => {
       const message = decodeMessage(messageRaw);
+      const author = connectedClients
+        .filter((client) => client.connection === websocket)
+        .at(0)?.name;
+      if (!author) {
+        websocket.close();
+        return;
+      }
+      message.author = author;
       db.addMessage(message);
       const socket = connectedClients.find(
         (client) => client.connection === websocket
