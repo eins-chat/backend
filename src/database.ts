@@ -1,11 +1,14 @@
 import { MongoClient } from "mongodb";
 import { Message, User } from "./models";
 
-const uri = "mongodb://localhost:27017";
-const client = new MongoClient(uri, {
+const hostname = process.env.DATABASE_HOST || '';
+const username = process.env.DATABASE_USER || '';
+const password = process.env.DATABASE_PORT || '';
+
+const client = new MongoClient(hostname, {
   auth: {
-    username: "root",
-    password: "pw",
+    username,
+    password,
   },
 });
 const database = client.db("einsChat");
