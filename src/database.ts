@@ -1,9 +1,9 @@
 import { MongoClient } from "mongodb";
 import { Message, User } from "./models";
 
-const hostname = process.env.DATABASE_HOST || '';
-const username = process.env.DATABASE_USER || '';
-const password = process.env.DATABASE_PORT || '';
+const hostname = process.env.DATABASE_HOST || "";
+const username = process.env.DATABASE_USER || "";
+const password = process.env.DATABASE_PASSWORD || "";
 
 const client = new MongoClient(hostname, {
   auth: {
