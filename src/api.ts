@@ -7,6 +7,7 @@ import { User } from "./models";
 import errorMiddleware from "./error-middleware";
 import authMiddleware from "./middlewares/auth.middleware";
 import corsMiddleware from "cors";
+import { verify } from "crypto";
 
 const PORT = 3000;
 
@@ -64,9 +65,18 @@ function registerEndpoints() {
     }
   });
 
+  app.post("/validateSession", authMiddleware, (req, res) => {
+    res.status(StatusCodes.OK).end();
+  });
+
   app.get("/users/:username", authMiddleware, async (req, res) => {
     const { username } = req.params;
     const users = await db.searchUser(username);
+    res.send(users);
+  });
+  app.get("/messages", authMiddleware, async (req, res) => {
+    const username = res.locals.username;
+    const users = await db.getMessages(username);
     res.send(users);
   });
 }

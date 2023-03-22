@@ -43,3 +43,10 @@ export async function searchUser(name: string) {
     .map((obj) => obj.username)
     .toArray();
 }
+export async function getMessages(username: string) {
+  return await messagesCollection
+    .find({
+      $or: [{ author: username }, { receiver: username }],
+    })
+    .toArray();
+}

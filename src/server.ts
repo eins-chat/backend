@@ -69,7 +69,7 @@ function onConnect(websocket: WebSocket) {
       const socket = connectedClients.find(
         (client) => client.connection === websocket
       );
-
+      websocket.send(message.toString());
       if (socket) {
         console.log(socket.name + ": " + JSON.stringify(message));
         connectedClients
