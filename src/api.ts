@@ -64,8 +64,9 @@ function registerEndpoints() {
     }
   });
 
-  app.get("/users", authMiddleware, async (req, res) => {
-    const users = await db.searchUser("e");
+  app.get("/users/:username", authMiddleware, async (req, res) => {
+    const { username } = req.params;
+    const users = await db.searchUser(username);
     res.send(users);
   });
 }
