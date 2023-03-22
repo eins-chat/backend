@@ -1,25 +1,17 @@
 import http, { IncomingMessage, ServerResponse } from "http";
-import ws, { WebSocket, Server, RawData } from "ws";
-import { MongoClient } from "mongodb";
+import ws, { WebSocket, Server } from "ws";
 import { Message, Client } from "./models";
 import * as db from "./database";
 import { verify } from "./util/jwt";
 
 const wss = new Server({ noServer: true });
+
 let connectedClients: Client[] = [];
-const uri = "mongodb://localhost:27017";
-const client = new MongoClient(uri, {
-  auth: {
-    username: "root",
-    password: "pw",
-  },
-});
-const database = client.db("einsChat");
-const messagesCollection = database.collection("messages");
 
 export function start() {
   console.log("Starting server...");
-  http.createServer(accept).listen(8080);
+  const PORT = process.env.WEB_SOCKET_PORT || 8080;
+  http.createServer(accept).listen(PORT);
 }
 
 function accept(req: IncomingMessage, res: ServerResponse) {

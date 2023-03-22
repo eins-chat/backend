@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import fs from "fs";
 
-const key = fs.readFileSync("resources\\jwt-private-key.txt", "utf8");
+const PRIVATE_KEY = process.env.JWT_PRIVATE_KEY || '';
+
 const issuer = "1 Chat";
 const subject = "Client Authentication";
 
@@ -10,7 +10,7 @@ export function sign(username: string): string {
     {
       username: username,
     },
-    key,
+    PRIVATE_KEY,
     {
       algorithm: "RS256",
       issuer: issuer,
@@ -20,7 +20,7 @@ export function sign(username: string): string {
 }
 
 export function verify(token: string) {
-  return jwt.verify(token, key, {
+  return jwt.verify(token, PRIVATE_KEY, {
     algorithms: ["RS256"],
     issuer: issuer,
     subject: subject,

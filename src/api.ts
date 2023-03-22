@@ -7,9 +7,9 @@ import { User } from "./models";
 import errorMiddleware from "./error-middleware";
 import authMiddleware from "./middlewares/auth.middleware";
 import corsMiddleware from "cors";
-import { verify } from "crypto";
 
-const PORT = 3000;
+const PORT = process.env.API_PORT || 3000;
+const CORS_ORIGIN = process.env.API_CORS_ORIGIN || '';
 
 const app = express();
 
@@ -28,7 +28,7 @@ export function start() {
 function registerPreMiddlewares() {
   app.use(
     corsMiddleware({
-      origin: "http://localhost:4200",
+      origin: CORS_ORIGIN,
       methods: ["GET", "POST"],
     })
   );
