@@ -115,10 +115,11 @@ function registerEndpoints() {
 		res.status(StatusCodes.CREATED).send(groupToCreate.id).end();
 	});
 
-	app.get("/group/:groupID", authMiddleware, async (req, res) => {
-		const { groupID } = req.params;
-		res.send(db.getGroupByID(groupID));
-	});
+  app.get("/group/:groupID", authMiddleware, async (req, res) => {
+    const { groupID } = req.params;
+    const group = await db.getGroupByID(groupID);
+    res.send(group).end();
+  });
 }
 
 function registerPostMiddlewares() {
