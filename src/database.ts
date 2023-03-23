@@ -6,95 +6,111 @@ const username = process.env.DATABASE_USER || "";
 const password = process.env.DATABASE_PASSWORD || "";
 
 const client = new MongoClient(hostname, {
-  auth: {
-    username,
-    password,
-  },
+	auth: {
+		username,
+		password,
+	},
 });
+
 const database = client.db("einsChat");
 
-const usersCollection = database.collection("users");
-const messagesCollection = database.collection("messages");
-const groupCollection = database.collection("groups");
+const usersCollection = database.collection<User>("users");
+const messagesCollection = database.collection<Message>("messages");
+const groupCollection = database.collection<Group>("groups");
+
 export async function getUserByName(name: string): Promise<User> {
-  const document = await usersCollection.findOne({ username: name });
-  if (document) {
-    return new User(document.username, document.passwortHash);
-  }
-  throw new Error("user not found");
+	const document = await usersCollection.findOne({ name: name });
+
+	if (!document) {
+		throw new Error("User not found");
+	}
+
+	return {
+		name: document.name,
+		passwordHash: document.passwordHash,
+	};
 }
 
 export async function userExists(name: string): Promise<boolean> {
-  const document = await usersCollection.findOne({ username: name });
-  return document !== null;
+	const document = await usersCollection.findOne({ name: name });
+	return document !== null;
 }
 
 export async function addUser(user: User) {
-  if (!(await userExists(user.username))) {
-    usersCollection.insertOne(user);
-  } else {
-    throw new Error("user already exists");
-  }
+	if (!(await userExists(user.name))) {
+		await usersCollection.insertOne(user);
+	} else {
+		throw new Error("User already exists");
+	}
 }
 
-export function addMessage(message: Message) {
-  messagesCollection.insertOne(message);
+export async function addMessage(message: Message) {
+	await messagesCollection.insertOne(message);
 }
+
 export async function searchUser(name: string) {
-  const query = ".*" + name + ".*";
-  return await usersCollection
-    .find({ username: { $regex: query, $options: "i" } })
-    .map((obj) => obj.username)
-    .toArray();
-}
-export async function getMessages(username: string) {
-  const groupMessages = await messagesCollection
-    .aggregate([
-      {
-        $match: {
-          type: 1,
-        },
-      },
-      {
-        $lookup: {
-          from: "groups",
-          localField: "receiver",
-          foreignField: "groupID",
-          as: "group",
-        },
-      },
-      {
-        $match: {
-          "group.memberList": username,
-        },
-      },
-      { 
-        $set: {
-          receiver: {
-            $first: "$group.groupName"
-          }
-      }
-    },
-    ])
-    .toArray();
-    console.log(groupMessages);
-    
-  const privateMessages = await messagesCollection
-    .find({
-      $and: [
-        { type: 0 },
-        { $or: [{ author: username }, { receiver: username }] },
-      ],
-    })
-    .toArray();
-  return groupMessages.concat(privateMessages)
+	return await usersCollection
+		.find({
+			name: {
+				$regex: `.*${name}.*`,
+				$options: "i",
+			},
+		})
+		.map((user) => user.name)
+		.toArray();
 }
 
-export function createGroup(groupToCreate: Group) {
-  groupCollection.insertOne(groupToCreate);
+export async function getMessages(username: string) {
+	const groupMessages = await messagesCollection
+		.aggregate([
+			{
+				$match: {
+					type: 1,
+				},
+			},
+			{
+				$lookup: {
+					from: "groups",
+					localField: "receiver",
+					foreignField: "id",
+					as: "group",
+				},
+			},
+			{
+				$match: {
+					"group.members": username,
+				},
+			},
+			{
+				$set: {
+					receiver: {
+						$first: "$group.name",
+					},
+				},
+			},
+		])
+		.toArray();
+
+	console.log(groupMessages);
+
+	const privateMessages = await messagesCollection
+		.find({
+			$and: [
+				{ type: 0 },
+				{ $or: [{ author: username }, { receiver: username }] },
+			],
+		})
+		.toArray();
+
+	return groupMessages.concat(privateMessages);
 }
-export async function getGroupByID(groupID: string) {
-  return (await groupCollection.findOne({
-    groupID: groupID,
-  })) as unknown as Group;
+
+export async function createGroup(group: Group) {
+	await groupCollection.insertOne(group);
+}
+
+export async function getGroupByID(id: string) {
+	return await groupCollection.findOne({
+		id: id,
+	});
 }
