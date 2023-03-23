@@ -64,11 +64,12 @@ function onConnect(websocket: WebSocket) {
 			message.author = author;
 			db.addMessage(message);
 
-			const socket = connectedClients.find(
-				(client) => client.connection === websocket
-			);
-
-			websocket.send(JSON.stringify(message));
+      const socket = connectedClients.find(
+        (client) => client.connection === websocket
+      );
+      if (message.type === MessageType.PRIVATE_CHAT) {
+        websocket.send(JSON.stringify(message));
+      }
 
 			if (socket) {
 				console.log(socket.name + ": " + JSON.stringify(message));
