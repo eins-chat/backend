@@ -68,13 +68,13 @@ export async function getMessages(username: string) {
           "group.memberList": username,
         },
       },
-      { $replaceWith: {
-        $setField: {
-           field: "receiver",
-           input: "$$ROOT",
-           value: "$group.displayName"
+      { 
+        $set: {
+          receiver: {
+            $first: "$group.groupName"
+          }
       }
-    } }
+    },
     ])
     .toArray();
     console.log(groupMessages);
@@ -87,7 +87,6 @@ export async function getMessages(username: string) {
       ],
     })
     .toArray();
-    //return privateMessages;
   return groupMessages.concat(privateMessages)
 }
 
