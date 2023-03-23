@@ -48,11 +48,40 @@ export async function searchUser(name: string) {
     .toArray();
 }
 export async function getMessages(username: string) {
-  return await messagesCollection
+  const groupMessages = await messagesCollection
+    .aggregate([
+      {
+        $match: {
+          type: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "groups",
+          localField: "receiver",
+          foreignField: "groupID",
+          as: "group",
+        },
+      },
+      {
+        $match: {
+          "group.memberList": username,
+        },
+      },
+      {
+        group: 0,
+      },
+    ])
+    .toArray();
+  const privateMessages = await messagesCollection
     .find({
-      $or: [{ author: username }, { receiver: username }],
+      $and: [
+        { type: 0 },
+        { $or: [{ author: username }, { receiver: username }] },
+      ],
     })
     .toArray();
+  return privateMessages.concat(groupMessages);
 }
 
 export function createGroup(groupToCreate: Group) {
