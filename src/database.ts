@@ -84,7 +84,7 @@ export async function getMessages(username: string) {
 			{
 				$set: {
 					receiver: {
-						$first: "$group.name",
+            $first: "$group.id",
 					},
 				},
 			},
