@@ -68,11 +68,17 @@ export async function getMessages(username: string) {
           "group.memberList": username,
         },
       },
-      {
-        group: 0,
-      },
+      { $replaceWith: {
+        $setField: {
+           field: "receiver",
+           input: "$$ROOT",
+           value: "$group.displayName"
+      }
+    } }
     ])
     .toArray();
+    console.log(groupMessages);
+    
   const privateMessages = await messagesCollection
     .find({
       $and: [
@@ -81,7 +87,8 @@ export async function getMessages(username: string) {
       ],
     })
     .toArray();
-  return privateMessages.concat(groupMessages);
+    //return privateMessages;
+  return groupMessages.concat(privateMessages)
 }
 
 export function createGroup(groupToCreate: Group) {
