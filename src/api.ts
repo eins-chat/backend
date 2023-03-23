@@ -3,13 +3,13 @@ import { sign } from "./util/jwt";
 import { StatusCodes } from "http-status-codes";
 import { hashPw, verifyPw } from "./util/crypto";
 import * as db from "./database";
-import { User } from "./models";
+import { Group, User } from "./models";
 import errorMiddleware from "./error-middleware";
 import authMiddleware from "./middlewares/auth.middleware";
 import corsMiddleware from "cors";
-
+import { v4 as uuidv4 } from "uuid";
 const PORT = process.env.API_PORT || 3000;
-const CORS_ORIGIN = process.env.API_CORS_ORIGIN || '';
+const CORS_ORIGIN = process.env.API_CORS_ORIGIN || "";
 
 const app = express();
 
@@ -78,6 +78,32 @@ function registerEndpoints() {
     const username = res.locals.username;
     const users = await db.getMessages(username);
     res.send(users);
+  });
+  app.post("/createGroup", authMiddleware, async (req, res) => {
+    const group: any = req.body;
+    const realMemberList: string[] = [];
+    for (let username of group.memberList) {
+      if (await db.userExists(username)) {
+        realMemberList.push(username);
+      } else {
+        res
+          .status(StatusCodes.NOT_FOUND)
+          .send("username " + username + " does not exist")
+          .end();
+        return;
+      }
+    }
+    const groupToCreate: Group = new Group(
+      uuidv4(),
+      group.groupName,
+      realMemberList
+    );
+    db.createGroup(groupToCreate);
+    res.status(StatusCodes.CREATED).send(groupToCreate.groupID).end();
+  });
+  app.get("/group/:groupID", authMiddleware, async (req, res) => {
+    const { groupID } = req.params;
+    res.send(db.getGroupByID(groupID));
   });
 }
 

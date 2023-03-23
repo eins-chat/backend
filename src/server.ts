@@ -1,6 +1,6 @@
 import http, { IncomingMessage, ServerResponse } from "http";
 import ws, { WebSocket, Server } from "ws";
-import { Message, Client } from "./models";
+import { Message, Client, MessageType } from "./models";
 import * as db from "./database";
 import { verify } from "./util/jwt";
 
@@ -64,11 +64,23 @@ function onConnect(websocket: WebSocket) {
       websocket.send(message.toString());
       if (socket) {
         console.log(socket.name + ": " + JSON.stringify(message));
-        connectedClients
-          .filter((client) => client.name === message.receiver)
-          .forEach((client) => {
-            client.connection.send(message.toString());
-          });
+        if (message.type === MessageType.PRIVATE_CHAT) {
+          connectedClients
+            .filter((client) => client.name === message.receiver)
+            .forEach((client) => {
+              client.connection.send(message.toString());
+            });
+        } else {
+          const group = await db.getGroupByID(message.receiver);
+          if (!group) {
+            return;
+          }
+          connectedClients
+            .filter((client) => group.memberList.includes(client.name))
+            .forEach((client) => {
+              client.connection.send(message.toString());
+            });
+        }
       }
     });
   });
@@ -92,5 +104,11 @@ function decodeMessage(raw: ws.RawData): Message {
 
   // TODO: Validierung, ob richtiges Format?
 
-  return new Message(json.author, json.content, Date.now(), json.receiver);
+  return new Message(
+    json.author,
+    json.content,
+    json.type,
+    Date.now(),
+    json.receiver
+  );
 }

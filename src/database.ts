@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { Message, User } from "./models";
+import { Group, Message, User } from "./models";
 
 const hostname = process.env.DATABASE_HOST || "";
 const username = process.env.DATABASE_USER || "";
@@ -15,6 +15,7 @@ const database = client.db("einsChat");
 
 const usersCollection = database.collection("users");
 const messagesCollection = database.collection("messages");
+const groupCollection = database.collection("groups");
 export async function getUserByName(name: string): Promise<User> {
   const document = await usersCollection.findOne({ username: name });
   if (document) {
@@ -52,4 +53,13 @@ export async function getMessages(username: string) {
       $or: [{ author: username }, { receiver: username }],
     })
     .toArray();
+}
+
+export function createGroup(groupToCreate: Group) {
+  groupCollection.insertOne(groupToCreate);
+}
+export async function getGroupByID(groupID: string) {
+  return (await groupCollection.findOne({
+    groupID: groupID,
+  })) as unknown as Group;
 }
