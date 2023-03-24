@@ -1,7 +1,8 @@
 import { verify } from "../util/jwt";
+import { userExists } from "../database";
 import { NextFunction, Request, Response } from "express";
 
-function verifyToken(req: Request, res: Response, next: NextFunction) {
+async function verifyToken(req: Request, res: Response, next: NextFunction) {
 	const { authorization } = req.headers;
 
 	// No token passed
@@ -14,6 +15,11 @@ function verifyToken(req: Request, res: Response, next: NextFunction) {
 
 	// Token has invalid payload
 	if (typeof payload === "string") {
+		throw new Error("Invalid token");
+	}
+
+	const exists = await userExists(payload.username);
+	if (!exists) {
 		throw new Error("Invalid token");
 	}
 
