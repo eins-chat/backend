@@ -1,36 +1,19 @@
-import http, { IncomingMessage, ServerResponse } from "http";
 import ws, { WebSocket, Server } from "ws";
 import { Message, Client, MessageType } from "./models";
 import * as db from "./database";
 import { verify } from "./util/jwt";
 
-const wss = new Server({ noServer: true });
-
 let connectedClients: Client[] = [];
 
 export function start() {
 	console.log("Starting server...");
-	const PORT = process.env.WEB_SOCKET_PORT || 8080;
-	http.createServer(accept).listen(PORT);
-}
+	const PORT = process.env.WEB_SOCKET_PORT || "8080";
 
-function accept(req: IncomingMessage, res: ServerResponse) {
-	// all incoming requests must be websockets
-	if (
-		!req.headers.upgrade ||
-		req.headers.upgrade.toLowerCase() != "websocket"
-	) {
-		res.end();
-		return;
-	}
+	const wss = new Server({
+		port: parseInt(PORT),
+	});
 
-	// can be Connection: keep-alive, Upgrade
-	if (!req.headers.connection?.match(/\bupgrade\b/i)) {
-		res.end();
-		return;
-	}
-
-	wss.handleUpgrade(req, req.socket, Buffer.alloc(0), onConnect);
+	wss.on("connection", (socket) => onConnect(socket));
 }
 
 function onConnect(websocket: WebSocket) {
@@ -64,12 +47,13 @@ function onConnect(websocket: WebSocket) {
 			message.author = author;
 			db.addMessage(message);
 
-      const socket = connectedClients.find(
-        (client) => client.connection === websocket
-      );
-      if (message.type === MessageType.PRIVATE_CHAT) {
-        websocket.send(JSON.stringify(message));
-      }
+			const socket = connectedClients.find(
+				(client) => client.connection === websocket
+			);
+
+			if (message.type === MessageType.PRIVATE_CHAT) {
+				websocket.send(JSON.stringify(message));
+			}
 
 			if (socket) {
 				console.log(socket.name + ": " + JSON.stringify(message));
