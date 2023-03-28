@@ -1,22 +1,22 @@
-import express from "express";
-import { sign } from "./util/jwt";
-import { StatusCodes } from "http-status-codes";
-import { hashPw, verifyPw } from "./util/crypto";
-import * as db from "./database";
-import { Group } from "./models";
-import errorMiddleware from "./middlewares/error.middleware";
-import authMiddleware from "./middlewares/auth.middleware";
-import corsMiddleware from "cors";
-import { v4 as uuidv4 } from "uuid";
-require("express-async-errors");
+import express from 'express';
+import { sign } from './util/jwt';
+import { StatusCodes } from 'http-status-codes';
+import { hashPw, verifyPw } from './util/crypto';
+import * as db from './database';
+import { Group } from './models';
+import errorMiddleware from './middlewares/error.middleware';
+import authMiddleware from './middlewares/auth.middleware';
+import corsMiddleware from 'cors';
+import { v4 as uuidv4 } from 'uuid';
+require('express-async-errors');
 
 const PORT = process.env.API_PORT || 3000;
-const CORS_ORIGIN = process.env.API_CORS_ORIGIN || "";
+const CORS_ORIGIN = process.env.API_CORS_ORIGIN || '';
 
 const app = express();
 
 export function start() {
-	console.log("Starting API...");
+	console.log('Starting API...');
 
 	registerPreMiddlewares();
 	registerEndpoints();
@@ -31,7 +31,7 @@ function registerPreMiddlewares() {
 	app.use(
 		corsMiddleware({
 			origin: CORS_ORIGIN,
-			methods: ["GET", "POST"],
+			methods: ['GET', 'POST'],
 		})
 	);
 
@@ -39,7 +39,7 @@ function registerPreMiddlewares() {
 }
 
 function registerEndpoints() {
-	app.post("/register", async (req, res) => {
+	app.post('/register', async (req, res) => {
 		const { username, password } = req.body;
 		const userExist = await db.userExists(username);
 
@@ -52,12 +52,12 @@ function registerEndpoints() {
 			res.status(StatusCodes.CREATED).json({ token: token });
 		} else {
 			res.status(StatusCodes.CONFLICT).send(
-				"Du bist schon registriert, du Otto!"
+				'Du bist schon registriert, du Otto!'
 			);
 		}
 	});
 
-	app.post("/login", async (req, res) => {
+	app.post('/login', async (req, res) => {
 		const { username, password } = req.body;
 		const user = await db.getUserByName(username);
 
@@ -68,28 +68,28 @@ function registerEndpoints() {
 			res.status(StatusCodes.OK).json({ token: token });
 		} else {
 			res.status(StatusCodes.UNAUTHORIZED).send(
-				"Invalid username or password"
+				'Invalid username or password'
 			);
 		}
 	});
 
-	app.post("/validateSession", authMiddleware, (req, res) => {
+	app.post('/validateSession', authMiddleware, (req, res) => {
 		res.status(StatusCodes.OK).end();
 	});
 
-	app.get("/users/:username", authMiddleware, async (req, res) => {
+	app.get('/users/:username', authMiddleware, async (req, res) => {
 		const { username } = req.params;
 		const users = await db.searchUser(username);
 		res.send(users);
 	});
 
-	app.get("/messages", authMiddleware, async (req, res) => {
+	app.get('/messages', authMiddleware, async (req, res) => {
 		const username = res.locals.username;
 		const users = await db.getMessages(username);
 		res.send(users);
 	});
 
-	app.post("/createGroup", authMiddleware, async (req, res) => {
+	app.post('/createGroup', authMiddleware, async (req, res) => {
 		const group: Group = req.body;
 		const realMemberList: string[] = [];
 
@@ -112,14 +112,14 @@ function registerEndpoints() {
 
 		db.createGroup(groupToCreate);
 
-		res.status(StatusCodes.CREATED).send(groupToCreate).end();
+		res.status(StatusCodes.CREATED).send(groupToCreate.id).end();
 	});
 
-  app.get("/group/:groupID", authMiddleware, async (req, res) => {
-    const { groupID } = req.params;
-    const group = await db.getGroupByID(groupID);
-    res.send(group).end();
-  });
+	app.get('/group/:groupID', authMiddleware, async (req, res) => {
+		const { groupID } = req.params;
+		const group = await db.getGroupByID(groupID);
+		res.send(group).end();
+	});
 }
 
 function registerPostMiddlewares() {

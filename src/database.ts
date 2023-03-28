@@ -84,14 +84,12 @@ export async function getMessages(username: string) {
 			{
 				$set: {
 					receiver: {
-            $first: "$group.id",
+						$first: "$group.id",
 					},
 				},
 			},
 		])
 		.toArray();
-
-	console.log(groupMessages);
 
 	const privateMessages = await messagesCollection
 		.find({
