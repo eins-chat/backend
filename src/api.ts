@@ -112,7 +112,7 @@ function registerEndpoints() {
 
 		db.createGroup(groupToCreate);
 
-		res.status(StatusCodes.CREATED).send(groupToCreate.id).end();
+		res.status(StatusCodes.CREATED).send(groupToCreate).end();
 	});
 
 	app.get('/group/:groupID', authMiddleware, async (req, res) => {
